@@ -274,9 +274,12 @@ class _Challenge1ScreenState extends State<Challenge1Screen>
       ),
       child: TextField(
         enabled: isEditable,
-        keyboardType: TextInputType.number,
+        keyboardType: TextInputType.text,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(1),
+        ]
         textAlign: TextAlign.center,
-        maxLength: 1,
         style: TextStyle(
           color: Colors.white,
           fontSize: 20,

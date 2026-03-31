@@ -7,9 +7,14 @@ import 'package:flame/collisions.dart';
 import 'package:flame/input.dart';
 import 'package:just_audio/just_audio.dart';
 
-class DoodleJumpGame extends FlameGame
-    with HasCollisionDetection, HasKeyboardHandlerComponents {
+class DoodleJumpGame extends FlameGame with HasCollisionDetection, HasKeyboardHandlerComponents {
   final VoidCallback onGameOver;
+  late double gravity;
+  late double jumpForce;
+  late double platformMinGap;
+  late double platformMaxGap;
+  late double platformWidth;
+  late double platformHeight;
   late SpriteComponent background;
   late Player player;
   late TextComponent scoreDisplay;
@@ -18,22 +23,21 @@ class DoodleJumpGame extends FlameGame
   bool secretGift1Triggered = false;
   bool secretGift2Triggered = false;
   bool isGameOver = false;
-  final Random rnd = Random();
-  final double levelWidth = 150;
-  final double minY = 20;
-  final double maxY = 100;
-  double currentY = 0;
   bool isStarted = false;
+  double currentY = 0;
+  final Random rnd = Random();
 
   DoodleJumpGame({required this.onGameOver});
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    await _initializeGame();
-  }
-
-  Future<void> _initializeGame() async {
+    gravity = size.y * 1.2;
+    jumpForce = size.y * 0.6;
+    platformMinGap = size.y * 0.05;
+    platformMaxGap = size.y * 0.15;
+    platformWidth = size.x * 0.2;
+    platformHeight = size.y * 0.012;
     final bgSprite = await loadSprite('background.png');
     background = SpriteComponent(
       sprite: bgSprite,
@@ -42,20 +46,23 @@ class DoodleJumpGame extends FlameGame
       position: Vector2(0, -size.y),
     );
     add(background);
-
+    final playerSize = Vector2(size.x * 0.10, size.x * 0.10);
     player = Player(
-      position: Vector2(size.x / 2, size.y - 100),
-      size: Vector2(48, 48),
+      position: Vector2(size.x / 2, size.y - playerSize.y * 2),
+      size: playerSize,
+      gravity: gravity,
     );
     add(player);
-
-    final initialPlatformY = size.y - 20;
-    add(PlatformComponent(Vector2(size.x / 2, initialPlatformY), Vector2(60, 12)));
+    final initialPlatformY = size.y - platformHeight - size.y * 0.02;
+    add(PlatformComponent(
+      Vector2(size.x / 2, initialPlatformY),
+      Vector2(platformWidth, platformHeight),
+      jumpForce,
+    ));
     currentY = initialPlatformY;
     for (int i = 0; i < 10; i++) {
       addPlatform();
     }
-
     scoreDisplay = TextComponent(
       text: "Score: 0",
       anchor: Anchor.topRight,
@@ -68,35 +75,21 @@ class DoodleJumpGame extends FlameGame
     isStarted = true;
   }
 
-  Future<void> reset() async {
-    score = 0;
-    giftTriggered = false;
-    secretGift1Triggered = false;
-    secretGift2Triggered = false;
-    isGameOver = false;
-    isStarted = false;
-    currentY = size.y - 20;
-
-    children.where((component) => component != scoreDisplay).toList().forEach((component) {
-      component.removeFromParent();
-    });
-    await _initializeGame();
-  }
-
   void addPlatform() {
-    double randomYSpacing = rnd.nextDouble() * (maxY - minY) + minY;
-    double newY = currentY - randomYSpacing;
-    currentY = newY;
-    final platformWidth = 60.0;
-    final px = rnd.nextDouble() * (size.x - levelWidth - platformWidth) + platformWidth / 2;
-    final py = newY;
-    add(PlatformComponent(Vector2(px, py), Vector2(platformWidth, 12)));
+    final spacing = rnd.nextDouble() * (platformMaxGap - platformMinGap) + platformMinGap;
+    currentY -= spacing;
+    final px = rnd.nextDouble() * (size.x - platformWidth) + platformWidth / 2;
+    add(PlatformComponent(
+      Vector2(px, currentY),
+      Vector2(platformWidth, platformHeight),
+      jumpForce,
+    ));
   }
 
   void removeOffScreenPlatforms() {
-    children.whereType<PlatformComponent>().forEach((platform) {
-      if (platform.position.y > size.y + platform.size.y) {
-        platform.removeFromParent();
+    children.whereType<PlatformComponent>().forEach((p) {
+      if (p.position.y > size.y + p.size.y) {
+        p.removeFromParent();
       }
     });
   }
@@ -108,25 +101,24 @@ class DoodleJumpGame extends FlameGame
       return;
     }
     if (player.position.y < size.y * 0.5) {
-      final diff = (size.y * 0.5) - player.position.y;
-      score += diff;
+      final dy = (size.y * 0.5) - player.position.y;
+      score += dy;
       scoreDisplay.text = "Score: ${score.toInt()}";
       for (final c in children) {
         if (c is PositionComponent && c != scoreDisplay) {
-          c.position.y += diff;
+          c.position.y += dy;
         }
       }
-      background.position.y += diff;
+      background.position.y += dy;
       if (background.position.y > 0) {
         background.position.y = -size.y;
       }
-      currentY += diff;
+      currentY += dy;
     }
     while (currentY > player.position.y - size.y * 2) {
       addPlatform();
     }
     removeOffScreenPlatforms();
-    scoreDisplay.position = Vector2(size.x - 10, 10);
     if (score >= 1000 && !giftTriggered) {
       giftTriggered = true;
     }
@@ -136,7 +128,7 @@ class DoodleJumpGame extends FlameGame
     if (score >= 6000 && !secretGift2Triggered) {
       secretGift2Triggered = true;
     }
-    if (player.position.y > size.y + 100 && !isGameOver) {
+    if (player.position.y > size.y + player.size.y && !isGameOver) {
       isGameOver = true;
       onGameOver();
     }
@@ -147,14 +139,10 @@ class DoodleJumpGame extends FlameGame
     if (event is KeyDownEvent) {
       if (keysPressed.contains(LogicalKeyboardKey.arrowLeft)) {
         player.horizontalSpeed = -Player.defaultSpeed;
-        if (!player.isFacingLeft) {
-          player.flipHorizontally();
-        }
+        if (!player.isFacingLeft) player.flipHorizontally();
       } else if (keysPressed.contains(LogicalKeyboardKey.arrowRight)) {
         player.horizontalSpeed = Player.defaultSpeed;
-        if (player.isFacingLeft) {
-          player.flipHorizontally();
-        }
+        if (player.isFacingLeft) player.flipHorizontally();
       }
     } else if (event is KeyUpEvent) {
       if (!keysPressed.contains(LogicalKeyboardKey.arrowLeft) &&
@@ -165,17 +153,27 @@ class DoodleJumpGame extends FlameGame
     return KeyEventResult.handled;
   }
 
-  void startGame() {
-    isStarted = true;
+  Future<void> reset() async {
+    score = 0;
+    giftTriggered = false;
+    secretGift1Triggered = false;
+    secretGift2Triggered = false;
+    isGameOver = false;
+    isStarted = false;
+    children.where((c) => c != scoreDisplay).toList().forEach((c) => c.removeFromParent());
+    await onLoad();
   }
 }
 
 class PlatformComponent extends SpriteComponent with CollisionCallbacks {
-  static const jumpForce = 450.0;
+  final double jumpForce;
   late AudioPlayer _jumpEffectPlayer;
 
-  PlatformComponent(Vector2 position, Vector2 size)
-      : super(position: position, size: size, anchor: Anchor.center);
+  PlatformComponent(
+    Vector2 position,
+    Vector2 size,
+    this.jumpForce,
+  ) : super(position: position, size: size, anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
@@ -197,13 +195,9 @@ class PlatformComponent extends SpriteComponent with CollisionCallbacks {
   }
 
   Future<void> _playJumpSound() async {
-    try {
-      await _jumpEffectPlayer.stop();
-      await _jumpEffectPlayer.seek(Duration.zero);
-      await _jumpEffectPlayer.play();
-    } catch (e) {
-      print("Error playing jump sound: $e");
-    }
+    await _jumpEffectPlayer.stop();
+    await _jumpEffectPlayer.seek(Duration.zero);
+    await _jumpEffectPlayer.play();
   }
 
   @override
@@ -213,16 +207,18 @@ class PlatformComponent extends SpriteComponent with CollisionCallbacks {
   }
 }
 
-class Player extends SpriteComponent
-    with CollisionCallbacks, HasGameRef<DoodleJumpGame> {
+class Player extends SpriteComponent with CollisionCallbacks, HasGameRef<DoodleJumpGame> {
   static const double defaultSpeed = 400;
+  final double gravity;
   Vector2 velocity = Vector2.zero();
   double horizontalSpeed = 0;
-  double gravity = 600;
   bool isFacingLeft = false;
 
-  Player({required Vector2 position, required Vector2 size})
-      : super(position: position, size: size, anchor: Anchor.center);
+  Player({
+    required Vector2 position,
+    required Vector2 size,
+    required this.gravity,
+  }) : super(position: position, size: size, anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
@@ -239,11 +235,10 @@ class Player extends SpriteComponent
   @override
   void update(double dt) {
     super.update(dt);
-    velocity.x = horizontalSpeed;
+    velocity.x += (horizontalSpeed - velocity.x) * 10 * dt;
     velocity.y += gravity * dt;
     position += velocity * dt;
-    final screenWidth = gameRef.size.x;
     final halfPlayerWidth = size.x / 2;
-    position.x = position.x.clamp(halfPlayerWidth, screenWidth - halfPlayerWidth);
+    position.x = position.x.clamp(halfPlayerWidth, gameRef.size.x - halfPlayerWidth);
   }
 }

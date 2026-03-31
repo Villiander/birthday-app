@@ -29,7 +29,7 @@ class _HeartfeltMessageScreenState extends State<HeartfeltMessageScreen>
     "and outshine even the stars above\nwith your brilliance!",
     "I completely believe in you\nand will always support you :)",
     "my ride to college and home",
-    "my greatest support that i can always count on",
+    "my greatest support` that i can always count on",
     "the best study partner i could ever ask for",
     "my precious, lovely and adorable Pikachu ❤️",
     "a very happy birthday to the prettiest lady once again <3",

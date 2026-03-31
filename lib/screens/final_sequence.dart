@@ -100,7 +100,7 @@ class _FinalAnimationScreenState extends State<FinalAnimationScreen>
               child: Stack(
                 children: [
                   Lottie.asset(
-                    'animations/fireworks1.json',
+                    'assets/animations/fireworks1.json',
                     fit: BoxFit.cover,
                     repeat: true,
                   ),
@@ -108,7 +108,7 @@ class _FinalAnimationScreenState extends State<FinalAnimationScreen>
                     left: 100,
                     right: 100,
                     child: Lottie.asset(
-                      'animations/fireworks2.json',
+                      'assets/animations/fireworks2.json',
                       fit: BoxFit.cover,
                       repeat: true,
                     ),
@@ -116,7 +116,7 @@ class _FinalAnimationScreenState extends State<FinalAnimationScreen>
                   Positioned(
                     right: -100,
                     child: Lottie.asset(
-                      'animations/fireworks3.json',
+                      'assets/animations/fireworks3.json',
                       fit: BoxFit.cover,
                       repeat: true,
                     ),
@@ -125,7 +125,7 @@ class _FinalAnimationScreenState extends State<FinalAnimationScreen>
                     top: 50,
                     right: 50,
                     child: Lottie.asset(
-                      'animations/fireworks4.json',
+                      'assets/animations/fireworks4.json',
                       fit: BoxFit.cover,
                       repeat: true,
                     ),
@@ -147,7 +147,7 @@ class _FinalAnimationScreenState extends State<FinalAnimationScreen>
                         child: Transform.scale(
                           scale: 5.0,
                           child: Lottie.asset(
-                            'animations/heart_animation.json',
+                            'assets/animations/heart_animation.json',
                             controller: _heartAnimationController,
                             width: 300,
                             height: 300,
@@ -157,7 +157,7 @@ class _FinalAnimationScreenState extends State<FinalAnimationScreen>
                       ),
                     ),
                     Image.asset(
-                      'images/her_image.png',
+                      'assets/images/her_image.png',
                       width: 250,
                       height: 250,
                       fit: BoxFit.contain,
@@ -169,8 +169,8 @@ class _FinalAnimationScreenState extends State<FinalAnimationScreen>
                       child: _showTiara
                           ? Lottie.asset(
                               useCrown1
-                                  ? 'animations/crown1.json'
-                                  : 'animations/crown2.json',
+                                  ? 'assets/animations/crown1.json'
+                                  : 'assets/animations/crown2.json',
                               width: 900,
                               height: 140,
                               fit: BoxFit.contain,
