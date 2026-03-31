@@ -72,6 +72,10 @@ class DoodleJumpGame extends FlameGame with HasCollisionDetection, HasKeyboardHa
       ),
     );
     add(scoreDisplay);
+    isStarted = false;
+  }
+
+  void startGame() {
     isStarted = true;
   }
 

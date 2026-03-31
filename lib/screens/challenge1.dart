@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -278,7 +279,7 @@ class _Challenge1ScreenState extends State<Challenge1Screen>
         inputFormatters: [
           FilteringTextInputFormatter.digitsOnly,
           LengthLimitingTextInputFormatter(1),
-        ]
+        ],
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,
